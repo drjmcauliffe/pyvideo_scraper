@@ -1,0 +1,12 @@
+{
+    "folders":
+    [
+        {
+            "follow_symlinks": true,
+            "path": "/Users/jmcaulif/Code/python/pyvideo_scraper"
+        }
+    ],
+    "settings": {
+        "python_interpreter_path": "/Users/jmcaulif/.virtualenvs/pyvideo_scraper/bin/python"
+    }
+}
