@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import argparse
@@ -7,6 +8,7 @@ import requests
 import bs4
 from pytube import YouTube
 from urlparse import urlparse
+import os
 
 
 # root_url = 'http://pyvideo.org'
@@ -15,14 +17,21 @@ from urlparse import urlparse
 # root_url = 'http://pyvideo.org'
 # index_url = root_url + '/category/51/scipy-2014'
 
+# test comment
+
 
 def download_yt_video(yt_url, filename, path):
     yt = YouTube()
-    yt.url = yt_url
-    yt.filename = filename
-    max_res = yt.filter('mp4')[-1].resolution
-    video = yt.get('mp4', max_res)
-    video.download(path, verbose=False)
+    yt.url = yt_url  
+    yt.filename = u'{}.mp4'.format(filename.replace('/', '-').replace(':', ' - '))
+    if os.path.isfile(os.path.join(path, yt.filename)):
+        print '            Already exists!'
+    else:
+        print '            Downloading...',
+        max_res = yt.filter('mp4')[-1].resolution
+        video = yt.get('mp4', max_res)
+        video.download(path, verbose=False)
+        print ' Done!'
 
 
 def get_video_page_urls(index_url):
@@ -84,7 +93,7 @@ def show_video_stats(options):
         video_page_urls[i] = root_url + video_page_urls[i][1:]
     results = sorted(pool.map(get_video_data, video_page_urls), key=lambda video: video[options.sort],
                      reverse=True)
-    print('\nPage name: {}'.format(video_page_title))
+    print('Page name: {}'.format(video_page_title))
     print('Total Number of Talks: {}'.format(len(results)))
     max = options.max
     if max is None or max > len(results):
@@ -99,15 +108,12 @@ def show_video_stats(options):
                 results[i]['title'], ', '.join(results[i]['speakers']), results[i]['views'],
                 results[i]['likes'], results[i]['dislikes']))
         else:
-            if options.download:
-                dl_tag = '-- Downloading...'
-            else:
-                dl_tag = ''
-            print(u'{0:5d} {1:3d} {2:3d} {3} ({4}) {5}'.format(
+            print(u'{0:5d} {1:3d} {2:3d} {3} ({4})'.format(
                 results[i]['views'], results[i]['likes'], results[i]['dislikes'], results[i]['title'],
-                ', '.join(results[i]['speakers']), dl_tag))
+                ', '.join(results[i]['speakers'])))
         if options.download:
-            download_yt_video(results[i]['youtube_url'], ' - '.join([results[i]['title'], ', '.join(results[i]['speakers'])]), options.path)
+            if 'youtube_url' in results[i]:
+                download_yt_video(results[i]['youtube_url'], ' - '.join([results[i]['title'], ', '.join(results[i]['speakers'])]), options.path)
 
 
 if __name__ == '__main__':
