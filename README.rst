@@ -15,8 +15,8 @@ Known Bugs
 
 * When running on a long list of videos (SciPy 2014 - 57 Videos for example) the script crashes out with 429 Error: Too many requests... will look into this soon.
 
-Features
+ToDo
 --------
 
-* TODO: Fix this repo with proper tests and documentation.
-* TODO: Generalise the scirpt to also 'search' youtube and download the results.
+* Fix this repo with proper tests and documentation.
+* Generalise the scirpt to also 'search' youtube and download the results.
