@@ -19,7 +19,6 @@ from urlparse import urlparse
 def download_yt_video(yt_url, filename, path):
     yt = YouTube()
     yt.url = yt_url
-    print path
     yt.filename = filename
     max_res = yt.filter('mp4')[-1].resolution
     video = yt.get('mp4', max_res)
