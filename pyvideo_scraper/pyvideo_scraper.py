@@ -10,28 +10,29 @@ from pytube import YouTube
 from urlparse import urlparse
 import os
 
+needs = 0
+gots = 0
 
-# root_url = 'http://pyvideo.org'
-# index_url = root_url + '/category/50/pycon-us-2014'
-
-# root_url = 'http://pyvideo.org'
-# index_url = root_url + '/category/51/scipy-2014'
-
-# test comment
-
-
-def download_yt_video(yt_url, filename, path):
+def download_yt_video(yt_url, filename, path, sim=False):
+    global needs
+    global gots
     yt = YouTube()
     yt.url = yt_url  
-    yt.filename = u'{}.mp4'.format(filename.replace('/', '-').replace(':', ' - '))
-    if os.path.isfile(os.path.join(path, yt.filename)):
-        print '            Already exists!'
+    yt.filename = u'{}'.format(filename.replace('/', '-').replace(':', ','))
+    if os.path.isfile(os.path.join(path, u'{}.mp4'.format(yt.filename))):
+        print '            Got it!'
+        gots += 1
     else:
-        print '            Downloading...',
-        max_res = yt.filter('mp4')[-1].resolution
-        video = yt.get('mp4', max_res)
-        video.download(path, verbose=False)
-        print ' Done!'
+        if sim:
+            print('            Need It!')
+            needs +=1
+        else:
+            print '            Downloading...',
+            max_res = yt.filter('mp4')[-1].resolution
+            video = yt.get('mp4', max_res)
+            video.download(path, verbose=False)
+            print ' Done!'
+            gots += 1
 
 
 def get_video_page_urls(index_url):
@@ -79,12 +80,16 @@ def parse_args():
                         help='number of workers to use, 8 by default.')
     parser.add_argument('--download', action='store_true', default=False,
                         help='download each video from youtube.com')
+    parser.add_argument('--sim', action='store_true', default=False,
+                        help='check and show which videos you have and which you need')
     parser.add_argument('--path', default='./',
                         help='path where to save the videos')
     return parser.parse_args()
 
 
-def show_video_stats(options):
+def show_video_stats(options):    
+    global needs
+    global gots
     index_url = options.pyvidsite
     root_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse( index_url ))
     pool = Pool(options.workers)
@@ -111,10 +116,14 @@ def show_video_stats(options):
             print(u'{0:5d} {1:3d} {2:3d} {3} ({4})'.format(
                 results[i]['views'], results[i]['likes'], results[i]['dislikes'], results[i]['title'],
                 ', '.join(results[i]['speakers'])))
-        if options.download:
+        if options.download or options.sim:
             if 'youtube_url' in results[i]:
-                download_yt_video(results[i]['youtube_url'], ' - '.join([results[i]['title'], ', '.join(results[i]['speakers'])]), options.path)
-
-
+                download_yt_video(results[i]['youtube_url'], ' - '.join([results[i]['title'], ', '.join(results[i]['speakers'])]), options.path, sim=options.sim)
+            else:
+                print('            No YouTube video!')
+    print('\nGots:  {}'.format(gots))
+    print('Need: {}'.format(needs))
+        
+                
 if __name__ == '__main__':
     show_video_stats(parse_args())
