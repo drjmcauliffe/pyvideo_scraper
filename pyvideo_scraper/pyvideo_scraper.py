@@ -1,6 +1,6 @@
-
 #!/usr/bin/env python
 
+from __future__ import print_function
 import argparse
 import re
 from multiprocessing.pool import ThreadPool as Pool
@@ -9,37 +9,41 @@ import bs4
 from pytube import YouTube
 from urlparse import urlparse
 import os
+import sys
+
 
 needs = 0
 gots = 0
+
 
 def download_yt_video(yt_url, filename, path, sim=False):
     global needs
     global gots
     yt = YouTube()
-    yt.url = yt_url  
+    yt.url = yt_url
     yt.filename = u'{}'.format(filename.replace('/', '-').replace(':', ','))
     if os.path.isfile(os.path.join(path, u'{}.mp4'.format(yt.filename))):
-        print '            Got it!'
+        print('              Got it!')
         gots += 1
     else:
         if sim:
-            print('            Need It!')
-            needs +=1
+            print('              Need It!')
+            needs += 1
         else:
-            print '            Downloading...',
+            print('              Downloading... ', end='')
             max_res = yt.filter('mp4')[-1].resolution
             video = yt.get('mp4', max_res)
             video.download(path, verbose=False)
-            print ' Done!'
+            print('Done!')
             gots += 1
 
 
 def get_video_page_urls(index_url):
     response = requests.get(index_url)
     soup = bs4.BeautifulSoup(response.text)
+    selector = 'div.video-summary-data a[href^=/video]'
     return soup.title.string, [a.attrs.get('href') for a in
-            soup.select('div.video-summary-data a[href^=/video]')]
+                               soup.select(selector)]
 
 
 def get_video_data(video_page_url):
@@ -68,8 +72,7 @@ def get_video_data(video_page_url):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Show PyCon 2014 video statistics.')
-    # parser.add_argument('--site', default='http://pyvideo.org/category/50/pycon-us-2014')
+    parser = argparse.ArgumentParser(description='Download pyvideo.org Python videos.')
     parser.add_argument('pyvidsite', help='specify the pyvideo site you want to scrape')
     parser.add_argument('--sort', metavar='FIELD', choices=['views', 'likes', 'dislikes'], default='views',
                         help='sort by the specified field. Options are views, likes and dislikes.')
@@ -84,10 +87,13 @@ def parse_args():
                         help='check and show which videos you have and which you need')
     parser.add_argument('--path', default='./',
                         help='path where to save the videos')
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(1)
     return parser.parse_args()
 
 
-def show_video_stats(options):    
+def show_video_stats(options):
     global needs
     global gots
     index_url = options.pyvidsite
@@ -98,8 +104,8 @@ def show_video_stats(options):
         video_page_urls[i] = root_url + video_page_urls[i][1:]
     results = sorted(pool.map(get_video_data, video_page_urls), key=lambda video: video[options.sort],
                      reverse=True)
-    print('Page name: {}'.format(video_page_title))
-    print('Total Number of Talks: {}'.format(len(results)))
+    print('\nPage name: {}'.format(video_page_title))
+    print('Total Number of Talks: {}\n'.format(len(results)))
     max = options.max
     if max is None or max > len(results):
         max = len(results)
@@ -121,9 +127,10 @@ def show_video_stats(options):
                 download_yt_video(results[i]['youtube_url'], ' - '.join([results[i]['title'], ', '.join(results[i]['speakers'])]), options.path, sim=options.sim)
             else:
                 print('            No YouTube video!')
-    print('\nGots:  {}'.format(gots))
-    print('Need: {}'.format(needs))
-        
-                
+    if options.download or options.sim:
+        print('Got:  {}'.format(gots))
+        print('Need: {}'.format(needs))
+
+
 if __name__ == '__main__':
     show_video_stats(parse_args())
